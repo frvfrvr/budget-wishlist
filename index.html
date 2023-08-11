@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Budget Wishlist</title>
+        <script defer src="index.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <link rel="stylesheet" href="output.css">
+    </head>
+
+    <body>
+
+        <div x-data="wishlist()" @change.debounce="update_save()" x-init="fetch_currencies(); update_load(); return;"
+            class="dark:invert invert-0 dark:selection:bg-gray-300 transition-all">
+
+            <!-- main page -->
+            <div class="relative flex min-h-screen flex-col justify-center overflow-hidden bg-gray-50 py-6 sm:py-12">
+                <div
+                    class="relative m-2 bg-white px-6 pb-8 pt-10 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:max-w-lg sm:rounded-lg sm:px-10 overflow-hidden">
+                    <button type="button" @click="theme_toggle()"
+                        class="absolute top-0 right-0 dark:hover:slate-700 flex-none rounded-bl-full bg-gray-500 dark:bg-gray-400 px-4 py-2 font-bold text-white dark:hover:bg-gray-200 hover:bg-gray-700 ">
+                        <span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="w-6 h-6 xxs:max-xs:w-4 xxs:max-xs:h-4 dark:stroke-black">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    class="opacity-100 dark:opacity-0 transition-all"
+                                    d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    class="dark:opacity-100 opacity-0 transition-all"
+                                    d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <!--  budget -->
+                    <div class="relative my-3 flex xxs:max-xs:flex-wrap">
+                        <input :value="budget || ''" @change="budget = $event.target.value" type="number" id="budget"
+                            placeholder="Budget"
+                            class="peer flex-initial min-w-[30%] rounded border-0 border-b border-gray-300 px-4 py-2 placeholder-transparent placeholder:italic focus:outline-none focus:ring-0" />
+                        <label for="budget"
+                            class="absolute -top-3.5 left-0 text-sm text-gray-600 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-placeholder-shown:text-slate-400 peer-focus:-top-3.5 peer-focus:text-sm peer-focus:text-gray-600">Budget</label>
+                        <!-- currency select -->
+                        <select name="currency_pick" id="currency_pick" :disabled="isLoading"
+                            @change="checkCurrency($event)">
+                            <option disabled selected value>CUR, SYM</option>
+                            <optgroup label="Custom">
+                                <template x-for="(currency, index) in currencies.slice(0,2)" :key="index">
+                                    <option :value="currency.key" x-text="currency.key + '  ' + currency.value">
+                                    </option>
+                                </template>
+                            </optgroup>
+                            <optgroup label="World">
+                                <template x-for="(currency, index) in currencies.slice(2)" :key="index">
+                                    <option :value="currency.key" x-text="currency.key + '  ' + currency.value">
+                                    </option>
+                                </template>
+                            </optgroup>
+                        </select>
+                        <input x-show="isCustomCurrency" x-model="currency_picked.symbol"
+                            :value="isCustomCurrency ? currency_picked.symbol : ''"
+                            @change="currency_picked.symbol = isCustomCurrency ? $event.target.value : '';"
+                            maxlength="4" type="text" placeholder="Symbol"
+                            class="flex-1 w-50 rounded border-0 border-b border-gray-300 py-2 placeholder:italic focus:outline-none focus:ring-0" />
+                    </div>
+
+                    <!-- add wishlist item -->
+                    <div class="relative my-3 mt-5 flex flex-wrap">
+                        <form>
+                            <input required type="text" x-model="item_name" placeholder="Item"
+                                class="flex-auto rounded-l border-0 border-b border-r-0 border-gray-300 px-4 py-2 placeholder-transparent placeholder:italic placeholder:text-gray-400 focus:outline-none" />
+                            <input required type="number" x-model="item_cost" placeholder="Cost"
+                                class="flex-auto rounded-r border-0 border-b border-gray-300 px-4 py-2 placeholder-transparent placeholder:italic placeholder:text-gray-400 focus:outline-none sm:basis-1/2" />
+                            <input type="submit" @click.prevent="add_wishlist(item_name, item_cost); return;" value="+"
+                                class="flex-none rounded bg-green-500 dark:bg-purple-500 px-4 py-2 font-bold text-white hover:bg-green-700 dark:hover:bg-purple-700 sm:hidden" />
+                        </form>
+
+                    </div>
+                </div>
+
+                <div
+                    class="relative m-2 sm:w-[75%] bg-white px-6 pb-8 pt-10 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:max-w-lg sm:rounded-lg sm:px-10 ">
+                    <div class="flex flex-grow flex-col ">
+                        <div>
+                            <i x-show="budget.length == 0">Input the budget amount</i>
+                            <i x-show="budget.length == 0 && wishlist_items.length == 0"> then </i>
+                            <i x-show="wishlist_items.length == 0"><span
+                                    :class="budget.length == 0 && 'lowercase'">I</span>nput the item name and cost then
+                                press Enter<span class="invisible xxs:max-sm:visible"> or the + (plus)
+                                    button...</span></i>
+                        </div>
+
+                        <ul>
+                            <!-- for loop starts here-->
+                            <template x-for="(item, index) in wishlist_items" :key="index">
+                                <li class="group">
+                                    <!-- start of each item -->
+                                    <span x-text="index + 1"></span>.
+                                    <span class="group-hover:font-bold" x-text="item.item"></span>
+                                    <!-- <span x-text="((index > 0) && (index < wishlist_items.length - 1)) ? 'middle' : (wishlist_items.length == 1) ? 'single' : 'edge'"></span> -->
+                                    <div class="flex flex-row">
+                                        <div
+                                            class="progress-bar z-10 my-2 w-full shrink border border-r-0 bg-gray-300 text-center">
+                                            <div class="h-full overflow-hidden group-hover:overflow-visible group-hover:font-bold truncate rounded-l dark:bg-purple-500 dark:group-hover:bg-purple-800 bg-green-500 group-hover:bg-green-800 px-3 text-right indent-5 text-lg text-white"
+                                                :style="{width: spend_each_cost(budget, wishlist_items)[index] / item.cost * 100 + '%'}">
+                                                <div :class="(spend_each_cost(budget, wishlist_items)[index] / item.cost * 100) < 30 ? 'group-hover:text-black' : '' "
+                                                    class="transition-all">
+                                                    <small><span x-text="currency_picked.symbol"></span>
+                                                        <span x-text="spend_each_cost(budget, wishlist_items)[index]">
+                                                        </span>
+                                                        / <span x-text="currency_picked.symbol"></span> <span
+                                                            x-text="item.cost"></span></small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input type="checkbox" id="li_item"
+                                            class="peer relative z-30 w-10 flex-none appearance-none rounded-full ring-4 ring-slate-500/100 hover:ring-slate-800/100 bg-slate-500 px-3 py-1 font-bold text-white opacity-100 hover:bg-slate-600 active:bg-slate-700" />
+                                        <label for="li_item"
+                                            :class="((index > 0) && (index < wishlist_items.length - 1)) ? 'peer-checked:w-[190px] sm:peer-checked:w-[207px]' : (wishlist_items.length == 1) ? 'peer-checked:w-[106px] sm:peer-checked:w-[123px]' : 'peer-checked:w-[148px] sm:peer-checked:w-[165px]'"
+                                            class="group absolute right-0 z-20 my-2 flex w-0 max-w-none origin-right flex-row overflow-hidden bg-gray-300 text-right transition-all peer-checked:bg-gray-300">
+                                            <button @click="remove_wishlist(index)"
+                                                class="flex-none rounded bg-red-500 dark:bg-cyan-500 px-3.5 py-1 font-bold text-white hover:bg-red-600 active:bg-red-700 dark:hover:bg-cyan-600 dark:active:bg-cyan-700">✘</button>
+                                            <button x-show="index > 0" @click="up_list(index)"
+                                                class="flex-none rounded bg-slate-500 px-3.5 py-1 font-bold text-white transition-all hover:bg-slate-600 active:bg-slate-700">▲</button>
+                                            <button x-show="index < wishlist_items.length - 1" @click="down_list(index)"
+                                                class="flex-none rounded bg-slate-500 px-3.5 py-1 font-bold text-white hover:bg-slate-600 active:bg-slate-700">▼</button>
+                                        </label>
+                                    </div>
+                                    <!-- end of each item -->
+                                </li>
+                            </template>
+                        </ul>
+                        <p>
+                            <small>
+                                <span
+                                    x-show="spend_each_cost(budget, wishlist_items)[wishlist_items.length - 1] > 0">You
+                                    can
+                                    save <span x-text="currency_picked.symbol"></span> <span
+                                        x-text="(wishlist_items.length > 2) ? spend_remain(budget, wishlist_items)[wishlist_items.length - 2] : spend_remain(budget, wishlist_items)[wishlist_items.length - 1]"></span>
+                                    out of <span x-text="currency_picked.symbol"></span> <span x-text="budget"></span>
+                                    if
+                                    you don't spend it...</span>
+                            </small>
+                        </p>
+
+
+                    </div>
+                </div>
+
+                <div
+                    class="relative m-2 bg-white px-6 pb-8 pt-10 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:max-w-lg sm:rounded-lg sm:px-10">
+                    <div class="flex sm:flex-row flex-col place-items-center">
+                        <div class="basis-1/4 sm:mx-5 sm:m-auto m-2"><button @click="clear_cache()"
+                                class="flex-none rounded bg-slate-500 px-4 py-2 font-bold text-white hover:bg-slate-600 active:bg-slate-700">Clear
+                                Cache</button></div>
+                        <div x-show="wishlist_items.length > 0" class="basis-1/4 sm:mx-5 sm:m-auto m-2"><button @click="json_export()"
+                                class="flex-none rounded bg-slate-500 px-4 py-2 font-bold text-white hover:bg-slate-600 active:bg-slate-700">Export
+                                JSON</button></div>
+                        <div class="basis-1/4 sm:mx-5 sm:m-auto m-2"><input type="file" id="file"
+                                @change="json_import()" class="hidden">
+                            <button @click="document.getElementById('file').click()"
+                                class="flex-none rounded bg-slate-500 px-4 py-2 font-bold text-white hover:bg-slate-600 active:bg-slate-700">Import
+                                JSON</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+
+</html>
