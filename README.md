@@ -9,7 +9,7 @@ You can...
 - [x] and see how much you save if you don't spend the last item.
 - [ ] add / subtract your budget.
 - [ ] personalized theme.
-- [ ] launch as homescreen app.
+- [ ] launch as homescreen app (Progressive Web App).
 
 The app also supports changing the display currency, importing and exporting JSON, and storing data locally.
 
