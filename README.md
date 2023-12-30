@@ -10,8 +10,11 @@ You can...
 - [ ] add / subtract your budget.
 - [ ] personalized theme.
 - [ ] launch as homescreen app (Progressive Web App).
-- [ ] calculate installments
-- [ ] add item names by scanning bar codes
+- [ ] calculate installments (suggested by my late mother)
+- [ ] add item names and cost by scanning bar codes
+- [ ] add multiple sources of budget and arrange by priority
+- [ ] edit item cost
+- [ ] smoother list interaction
 
 The app also supports changing the display currency, importing and exporting JSON, and storing data locally.
 
