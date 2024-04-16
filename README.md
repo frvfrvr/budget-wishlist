@@ -15,6 +15,7 @@ You can...
 - [ ] add multiple sources of budget and arrange by priority
 - [ ] edit item cost
 - [ ] smoother list interaction
+- [ ] allowance threshold by percentage or fixed amount
 
 The app also supports changing the display currency, importing and exporting JSON, and storing data locally.
 
